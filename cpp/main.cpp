@@ -1,5 +1,5 @@
 /**
- * @file main.cpp
+  * @file main.cpp
  * @author Raleigh Littles <raleighlittles@gmail.com>
  * @brief Entrypoint for Tourbox driver
  * @version 0.1.1
@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <cstring>
 #include <fcntl.h>
-// #include <iomanip>
+#include <sys/types.h>
 #include <time.h>
 #include <iostream>
 #include <signal.h>
@@ -21,7 +21,7 @@
 #include <string>
 #include <termios.h>
 #include <unistd.h>
-#include "/usr/include/confuse.h"
+#include <confuse.h>
 
 // Local
 #include "uinput_helper.h"
@@ -39,9 +39,9 @@ void sigint_handler(sig_atomic_t s)
 cfg_t *parse_conf(const char *filename)
 {
   cfg_opt_t opts[] = {
-    CFG_BOOL("passive-mode", cfg_false, CFGF_NONE),
-    CFG_BOOL("remote-completion", cfg_true, CFGF_NONE),
-    CFG_INT("auto-create-bookmark", 1, CFGF_NONE),
+    CFG_BOOL("testing...", cfg_false, CFGF_NONE),
+    CFG_BOOL("more testing...", cfg_true, CFGF_NONE),
+    CFG_INT("to test....", 1, CFGF_NONE),
     CFG_END()
   };
  
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     setlocale(LC_CTYPE, "");
 #endif
 
-    const char *filename = "tourbox.conf";
+    char *filename = (char *)"tourbox.conf";
     cfg = parse_conf(filename);
     if(!cfg)
     {
@@ -83,8 +83,7 @@ int main(int argc, char *argv[])
       ss.append("ACM0");  /* USB0 is another option */
     
     // Setup and open a serial port 
-    const std::string serialPortFile = ss;    
-    const int serialPortFileDescriptor = open(serialPortFile.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
+    const int serialPortFileDescriptor = open(ss.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
 
     if (serialPortFileDescriptor == -1)
     {
@@ -121,30 +120,32 @@ int main(int argc, char *argv[])
     // Register signal handler to make sure virtual device gets cleaned up
     signal(SIGINT, sigint_handler);
 
-    while (true)
+    struct timespec tim, tim2;
+    tim.tv_sec = 0;
+    tim.tv_nsec = 25000000L;
+    KeyType key;
+    ssize_t bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1);
+    while(0 <= bytesRead)
     {
-      struct timespec tim, tim2;
-      tim.tv_nsec = 0;
-      tim.tv_nsec = 100000000;
-
-
-      ssize_t bytesRead = read(serialPortFileDescriptor, readBuffer.begin(), 1);
-
-      if (bytesRead < 0)
+      bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1);
+      if(0 < bytesRead)
       {
-          std::cerr << "Error reading from serial port" << std::endl;
-          return 2;
-      }
-
-      if (bytesRead > 0)
-      {
-        KeyType key = (KeyType )readBuffer[0];
-        if(nanosleep(&tim, &tim2) < 0)
-            fprintf(stderr, "%s", "Nanosleep Failed!.\n\n");
+        key = (KeyType )readBuffer[0];
+        if (KeyType::PINKIE == key 
+         || KeyType::RING == key  
+         || KeyType::SIDE == key
+         || KeyType::TOP == key){
+            nanosleep(&tim, &tim2);
+            bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1);
+            if(0 != bytesRead)
+              key = (KeyType )readBuffer[0]; 
+        }
         generateKeyPressEvent(gUinputFileDescriptor, key);
+        nanosleep(&tim, &tim2);
       }
+      else 
+        nanosleep(&tim, &tim2);
     }
-
     // Clean up (although currently you can't get here)
     destroyUinput(gUinputFileDescriptor);
 

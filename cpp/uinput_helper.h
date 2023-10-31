@@ -47,7 +47,6 @@ void emit(int fileDescriptor, int type, int code, int val)
 
 void generateKeyPressEvent(int fileDescriptor, KeyType key)
 {
-    printf("\nKeyType: %i\nKeyMap: %i\n\n", (int )key, keyMap[key]);
     emit(fileDescriptor, EV_KEY, keyMap[key], 1);
     emit(fileDescriptor, EV_SYN, SYN_REPORT, 0);
     emit(fileDescriptor, EV_KEY, keyMap[key], 0);
