@@ -27,7 +27,7 @@
 #include "uinput_helper.h"
 
 // Remember, can't pass data to signals
-int gUinputFileDescriptor = 0;
+static int gUinputFileDescriptor = 0;
 
 void sigint_handler(sig_atomic_t s)
 {
@@ -112,41 +112,40 @@ int main(int argc, char *argv[])
 
     std::array<uint8_t, 1> readBuffer;
 
-    /// ---------- ///
     /// Setup the virtual driver
-
     gUinputFileDescriptor = setupUinput();
 
     // Register signal handler to make sure virtual device gets cleaned up
     signal(SIGINT, sigint_handler);
 
     struct timespec tim, tim2;
-    tim.tv_sec = 0;
-    tim.tv_nsec = 25000000L;
+    tim.tv_sec = 0;          // 0 seconds, plus
+    tim.tv_nsec = 25000000L; // 25 milliseconds
+    
     KeyType key;
     ssize_t bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1);
-    while(0 <= bytesRead)
+    while(0 <= bytesRead)   /* If there's a error accessing the buffer we dip out */
     {
-      bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1);
-      if(0 < bytesRead)
+      bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1); /* get some data */
+      if(0 < bytesRead) /* make sure they pressed a button (or nano sleep below) */
       {
-        key = (KeyType )readBuffer[0];
-        if (KeyType::PINKIE == key 
-         || KeyType::RING == key  
-         || KeyType::SIDE == key
-         || KeyType::TOP == key){
-            nanosleep(&tim, &tim2);
+        key = (KeyType )readBuffer[0];  /* use our KeyType to make it easier to read */
+        if (KeyType::PINKIE == key      
+         || KeyType::RING == key        // We are
+         || KeyType::SIDE == key        // looking for        // looking for
+         || KeyType::TOP == key){       // double clicks.
+            nanosleep(&tim, &tim2);     // Give them about 25ms to double click
             bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1);
-            if(0 != bytesRead)
-              key = (KeyType )readBuffer[0]; 
-        }
+            if(0 != bytesRead)                
+              key = (KeyType )readBuffer[0]; // Double click returns a different code from device.
+        }                                    //  -- see tourbox_keys.h for more info
         generateKeyPressEvent(gUinputFileDescriptor, key);
-        nanosleep(&tim, &tim2);
-      }
-      else 
-        nanosleep(&tim, &tim2);
-    }
-    // Clean up (although currently you can't get here)
+        nanosleep(&tim, &tim2); // Slow
+      }                         // ....down
+      else                      //........the 
+        nanosleep(&tim, &tim2); // .........read  
+    }                           // ...........buffer....
+                                //
     destroyUinput(gUinputFileDescriptor);
 
     return 0;
