@@ -123,7 +123,6 @@ int main(int argc, char *argv[])
 
     while (true)
     {
-      int xsleep = 0;
       struct timespec tim, tim2;
       tim.tv_nsec = 0;
       tim.tv_nsec = 100000000;
@@ -139,158 +138,11 @@ int main(int argc, char *argv[])
 
       if (bytesRead > 0)
       {
-        int x = readBuffer[0];
-        KeyType key = (KeyType )x;
-        printf("\n\n%i\t%i\n\n", x, (int )key);
+        KeyType key = (KeyType )readBuffer[0];
+        if(nanosleep(&tim, &tim2) < 0)
+            fprintf(stderr, "%s", "Nanosleep Failed!.\n\n");
         generateKeyPressEvent(gUinputFileDescriptor, key);
-        switch (x)
-        {
-          case (int )KeyType::RING:
-            std::cout << "---- RING ---"; 
-            break;
-          /*case 0x80:
-              xsleep = nanosleep(&tim, &tim2);
-              read(serialPortFileDescriptor, readBuffer.begin(),1);
-              std::printf("--->Rel:\t%.2X\n", readBuffer[0]);
-              if(readBuffer[0] == 0x18){
-                std::cout << "DOUBLE Ring 7 pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::DBL_RING);
-              }
-              else{
-                std::cout << "Button Ring 7 pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::RING);
-              }
-              break;
-*/
-            case 0x81:
-              xsleep = nanosleep(&tim, &tim2);
-              read(serialPortFileDescriptor, readBuffer.begin(),1);
-              std::printf("--->Rel:\t%.2X\n", readBuffer[0]);
-              if(readBuffer[0] == 0x21){
-                std::cout << "DOUBLE Side pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::DBL_RING);
-              }
-              else{
-                std::cout << "Side button pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::SIDE);
-              }
-              break;
-
-            case 0x82:
-              xsleep = nanosleep(&tim, &tim2);
-              read(serialPortFileDescriptor, readBuffer.begin(),1);
-              std::printf("--->Rel:\t%.2X\n", readBuffer[0]);
-              if(readBuffer[0] == 0x1f){
-                std::cout << "DOUBLE Top pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::DBL_RING);
-              }
-              else{
-                std::cout << "Top Button pressed " << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::TOP);
-              }
-              break;
-
-            case 0x83:
-              xsleep = nanosleep(&tim, &tim2);
-              read(serialPortFileDescriptor, readBuffer.begin(),1);
-              std::printf("--->Rel:\t%.2X\n", readBuffer[0]);
-              if(readBuffer[0] == 0x1c){
-                std::cout << "DOUBLE Pinkie pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::DBL_PINKIE);
-              }
-              else{
-                std::cout << "Button Pinkie pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::PINKIE);
-              }
-              break;
-
-            case 0x84:
-                std::cout << "Tall wheel moved counterclockwise" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::TALL_COUNTERCLOCKWISE);
-                break;
-
-            case 0x8F:
-                std::cout << "iPod wheel moved clockwise" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::IPOD_CLOCKWISE);
-                break;
-
-            case 0x90:
-                std::cout << "D-Pad up pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::DPAD_UP);
-                break;
-
-            case 0x91:
-                std::cout << "D-pad down pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::DPAD_DOWN);
-                break;
-
-            case 0x92:
-                std::cout << "D-pad left pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::DPAD_LEFT);
-                break;
-
-            case 0x93:
-                std::cout << "D-Pad right pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::DPAD_RIGHT);
-                break;
-
-            case 0x0A:
-                std::cout << "Scroll wheel clicked" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::SCROLL_PRESS);
-                break;
-
-            case 0x09:
-                std::cout << "Scroll wheel down used" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::SCROLL_DOWN);
-                break;
-
-            case 0x2A:
-                std::cout << "Button 11 pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::MOON);
-                break;
-
-            case 0x22:
-                std::cout << "Button A pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::NINTENDO_B);
-                break;
-
-            case 0x23:
-                std::cout << "Button B pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::NINTENDO_A);
-                break;
-
-            case 0x37:
-                std::cout << "Tall center wheel pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::TALL_PRESS);
-                break;
-
-            case 0x38:
-                std::cout << "iPod Wheel pressed" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::IPOD_PRESS);
-                break;
-
-            case 0x44:
-                std::cout << "Tall center wheel moved clockwise" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::TALL_CLOCKWISE);
-                break;
-
-            case 0x49:
-                std::cout << "Scroll wheel up used" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::SCROLL_UP);
-                break;
-
-            case 0x4F:
-                std::cout << "iPod wheel moved counterclockwise" << std::endl;
-                generateKeyPressEvent(gUinputFileDescriptor, KeyType::IPOD_COUNTERCLOCKWISE);
-                break;
-            default:
-                std::printf("Rel:\t%.2X\t%.2X\n", readBuffer[0], readBuffer[1]);
-                // Print for testing or debugging. Might want release events in the future.
-          }
-          std::printf("Key:\t%.2X\t%.2X\n", readBuffer[0], readBuffer[1]);
-          if(xsleep < 0)
-            fprintf(stderr, "%s: %i", "Nanosleep Failed! Error code:", xsleep);
-        }
+      }
     }
 
     // Clean up (although currently you can't get here)
