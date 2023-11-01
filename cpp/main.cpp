@@ -67,21 +67,20 @@ int main(int argc, char *argv[])
     setlocale(LC_CTYPE, "");
 #endif
 
-    char *filename = (char *)"tourbox.conf";
+    const char *filename = (char *)"tourbox.conf";
     cfg = parse_conf(filename);
     if(!cfg)
     {
         std::cerr << "Failed to open config file: " << filename <<  std::endl;
         return 1;
     }
-
     // Figure out how to poll for device later...
     std::string ss = "/dev/tty";
-    if (argc > 1) /* Allow one to change device if necessary */
-      ss.append(std::string(argv[1])); /* "/dev/ttyXXXX" */
-    else /* This might be a security concern, later...'' */
-      ss.append("ACM0");  /* USB0 is another option */
-    
+    if (argc > 1 && 4 >= strlen(argv[1]))   /* Allow one to change device if necessary */
+      ss.append(argv[1],0,strlen(argv[1])); /* But we don't want huge arbitrary amounts of data. */
+    else                                    /* Will have other options in the future. */
+      ss.append("ACM0");  /* USB0 is another potential option, for example */
+
     // Setup and open a serial port 
     const int serialPortFileDescriptor = open(ss.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
 
@@ -124,7 +123,7 @@ int main(int argc, char *argv[])
     
     KeyType key;
     ssize_t bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1);
-    while(0 <= bytesRead)   /* If there's a error accessing the buffer we dip out */
+    while(0 <= bytesRead)   /* If there's a error accessing the buffer we dip out gracefuly...*/
     {
       bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1); /* get some data */
       if(0 < bytesRead) /* make sure they pressed a button (or nano sleep below) */
@@ -138,14 +137,13 @@ int main(int argc, char *argv[])
             bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1);
             if(0 != bytesRead)                
               key = (KeyType )readBuffer[0]; // Double click returns a different code from device.
-        }                                    //  -- see tourbox_keys.h for more info
-        generateKeyPressEvent(gUinputFileDescriptor, key);
-        nanosleep(&tim, &tim2); // Slow
-      }                         // ....down
-      else                      //........the 
-        nanosleep(&tim, &tim2); // .........read  
-    }                           // ...........buffer....
-                                //
+          }
+          nanosleep(&tim, &tim2); // slow  
+          generateKeyPressEvent(gUinputFileDescriptor, key);
+      }                           // ....down
+      else                        //........the 
+        nanosleep(&tim, &tim2);   // .........read  
+    }                             // ...........buffer....
     destroyUinput(gUinputFileDescriptor);
 
     return 0;
