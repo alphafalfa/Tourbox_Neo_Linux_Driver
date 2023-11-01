@@ -1,1 +1,0 @@
-/usr/bin/c++ -g -O1 -Wall -Wextra -Wpedantic -Werror -lconfuse -g CMakeFiles/TourBox_Linux_Driver.dir/main.cpp.o -o TourBox_Linux_Driver 

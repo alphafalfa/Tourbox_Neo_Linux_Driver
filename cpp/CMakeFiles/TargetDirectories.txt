@@ -1,3 +1,0 @@
-/home/d00s/Git/Tourbox_Neo_Linux_Driver/cpp/CMakeFiles/TourBox_Linux_Driver.dir
-/home/d00s/Git/Tourbox_Neo_Linux_Driver/cpp/CMakeFiles/edit_cache.dir
-/home/d00s/Git/Tourbox_Neo_Linux_Driver/cpp/CMakeFiles/rebuild_cache.dir
