@@ -22,9 +22,12 @@
 #include <termios.h>
 #include <unistd.h>
 #include <confuse.h>
-
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Box.H>
 // Local
 #include "uinput_helper.h"
+
 
 // Remember, can't pass data to signals
 static int gUinputFileDescriptor = 0;
@@ -60,15 +63,24 @@ cfg_t *parse_conf(const char *filename)
 
 int main(int argc, char *argv[])
 {
-    cfg_t *cfg; /* 'confuse' library for config files */
     /* Localize messages & types according to environment, since v2.9 */
 #ifdef LC_MESSAGES /* confuse requests these locale setting */
     setlocale(LC_MESSAGES, "");
     setlocale(LC_CTYPE, "");
 #endif
 
+    Fl_Window *window = new Fl_Window(340,180);
+    Fl_Box *box = new Fl_Box(20,40,300,100,"Hello, World!");
+    box->box(FL_UP_BOX);
+    box->labelfont(FL_BOLD+FL_ITALIC);
+    box->labelsize(36);
+    box->labeltype(FL_SHADOW_LABEL);
+    window->end();
+    window->show(argc, argv);
+    return Fl::run();
+
     const char *filename = (char *)"tourbox.conf";
-    cfg = parse_conf(filename);
+    cfg_t *cfg = parse_conf(filename);
     if(!cfg)
     {
         std::cerr << "Failed to open config file: " << filename <<  std::endl;
