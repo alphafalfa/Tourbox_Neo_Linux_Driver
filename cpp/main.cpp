@@ -22,69 +22,50 @@
 #include <termios.h>
 #include <unistd.h>
 #include <confuse.h>
-#include <FL/Fl.H>
-#include <FL/Fl_Window.H>
-#include <FL/Fl_Box.H>
+// #include <FL/Fl.H>
+// #include <FL/Fl_Window.H>
+// #include <FL/Fl_Box.H>
 // Local
 #include "uinput_helper.h"
-
-
 // Remember, can't pass data to signals
 static int gUinputFileDescriptor = 0;
 
 void sigint_handler(sig_atomic_t s)
 {
+    const int error = gUinputFileDescriptor;
     std::cout << "\n\nNuked.\n\n" << s << std::endl;
     destroyUinput(gUinputFileDescriptor);
-    exit(1);
+    exit(error);
 }
 
-cfg_t *parse_conf(const char *filename)
-{
-  cfg_opt_t opts[] = {
-    CFG_BOOL("testing...", cfg_false, CFGF_NONE),
-    CFG_BOOL("more testing...", cfg_true, CFGF_NONE),
-    CFG_INT("to test....", 1, CFGF_NONE),
-    CFG_END()
-  };
- 
-  cfg_t *cfg = cfg_init(opts, CFGF_NONE);
-  switch (cfg_parse(cfg, filename)) {
-    case CFG_FILE_ERROR:
-        printf("warning: configuration file '%s' could not be read: %s\n", filename, strerror(errno));
-        return 0;
-    case CFG_PARSE_ERROR:
-        return 0;
-    case CFG_SUCCESS:
-        break;
-  }
-  return cfg;
-}
 
 int main(int argc, char *argv[])
 {
+    /* === For libconfuse to handle config files === */
     /* Localize messages & types according to environment, since v2.9 */
-#ifdef LC_MESSAGES /* confuse requests these locale setting */
+#ifdef LC_MESSAGES 
     setlocale(LC_MESSAGES, "");
     setlocale(LC_CTYPE, "");
 #endif
+    /* === it's no longer confused, it's libconfused=== */
 
-    Fl_Window *window = new Fl_Window(340,180);
-    Fl_Box *box = new Fl_Box(20,40,300,100,"Hello, World!");
-    box->box(FL_UP_BOX);
-    box->labelfont(FL_BOLD+FL_ITALIC);
-    box->labelsize(36);
-    box->labeltype(FL_SHADOW_LABEL);
-    window->end();
-    window->show(argc, argv);
-    return Fl::run();
+    /* === Tentatively planning on FLTK as a lightweight GUI */
+    // Fl_Window *window = new Fl_Window(999,444);
+    // Fl_Box *box = new Fl_Box(320,240,300,100,"Hello, World!");
+    // box->box(FL_UP_BOX);
+    // box->labelfont(FL_BOLD+FL_ITALIC);
+    // box->labelsize(36);
+    // box->labeltype(FL_SHADOW_LABEL);
+    // window->end();
+    // window->show(argc, argv);
+    // return Fl::run();
 
     const char *filename = (char *)"tourbox.conf";
     cfg_t *cfg = parse_conf(filename);
     if(!cfg)
     {
         std::cerr << "Failed to open config file: " << filename <<  std::endl;
-        return 1;
+        exit(1);
     }
     // Figure out how to poll for device later...
     std::string ss = "/dev/tty";
@@ -95,11 +76,11 @@ int main(int argc, char *argv[])
 
     // Setup and open a serial port 
     const int serialPortFileDescriptor = open(ss.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
-
     if (serialPortFileDescriptor == -1)
     {
-        std::cerr << "Failed to open serial port file " << serialPortFileDescriptor << std::endl;
-        return 1;
+        std::cerr << "Failed to open serial port: " << ss << std::endl;
+        std::cerr << "Did you forget to plug in the TourBox?"  << std::endl;
+        exit(serialPortFileDescriptor);
     }
 
     struct termios term_options;
@@ -111,14 +92,14 @@ int main(int argc, char *argv[])
     {
         std::cerr << "Failed to set termios settings";
         close(serialPortFileDescriptor);
-        return 1;
+        exit(2);
     }
 
     if ((tcflush(serialPortFileDescriptor, TCIOFLUSH)) != 0)
     {
         std::cerr << "Failed to flush termios settings";
         close(serialPortFileDescriptor);
-        return 1;
+        exit(3);
     }
 
     std::array<uint8_t, 1> readBuffer;
@@ -143,19 +124,18 @@ int main(int argc, char *argv[])
         key = (KeyType )readBuffer[0];  /* use our KeyType to make it easier to read */
         if (KeyType::PINKIE == key      
          || KeyType::RING == key        // We are
-         || KeyType::SIDE == key        // looking for        // looking for
+         || KeyType::SIDE == key        // looking for    // looking for
          || KeyType::TOP == key){       // double clicks.
             nanosleep(&tim, &tim2);     // Give them about 25ms to double click
             bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1);
             if(0 != bytesRead)                
               key = (KeyType )readBuffer[0]; // Double click returns a different code from device.
-          }
-          nanosleep(&tim, &tim2); // slow  
+          }                                  // Only four of the buttons have this feature.
           generateKeyPressEvent(gUinputFileDescriptor, key);
-      }                           // ....down
-      else                        //........the 
-        nanosleep(&tim, &tim2);   // .........read  
-    }                             // ...........buffer....
+      }                           // ..slow..down...
+      else                        //...........the.. 
+        nanosleep(&tim, &tim2);   // ............read..  
+    }                             // ..............buffer....
     destroyUinput(gUinputFileDescriptor);
 
     return 0;

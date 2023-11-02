@@ -3,20 +3,7 @@
 
 CMakeFiles/TourBox_Linux_Driver.dir/main.cpp.o
  /home/d00s/Git/Tourbox_Neo_Linux_Driver/cpp/main.cpp
- /home/d00s/Git/Tourbox_Neo_Linux_Driver/cpp/tourbox_keys.h
  /home/d00s/Git/Tourbox_Neo_Linux_Driver/cpp/uinput_helper.h
- /usr/include/FL/Enumerations.H
- /usr/include/FL/Fl.H
- /usr/include/FL/Fl_Bitmap.H
- /usr/include/FL/Fl_Box.H
- /usr/include/FL/Fl_Export.H
- /usr/include/FL/Fl_Group.H
- /usr/include/FL/Fl_Image.H
- /usr/include/FL/Fl_Widget.H
- /usr/include/FL/Fl_Window.H
- /usr/include/FL/abi-version.h
- /usr/include/FL/fl_types.h
- /usr/include/FL/fl_utf8.h
  /usr/include/alloca.h
  /usr/include/asm-generic/bitsperlong.h
  /usr/include/asm-generic/errno-base.h
@@ -73,8 +60,6 @@ CMakeFiles/TourBox_Linux_Driver.dir/main.cpp.o
  /usr/include/bits/sigthread.h
  /usr/include/bits/ss_flags.h
  /usr/include/bits/stat.h
- /usr/include/bits/statx-generic.h
- /usr/include/bits/statx.h
  /usr/include/bits/stdint-intn.h
  /usr/include/bits/stdint-uintn.h
  /usr/include/bits/stdio.h
@@ -126,8 +111,6 @@ CMakeFiles/TourBox_Linux_Driver.dir/main.cpp.o
  /usr/include/bits/types/struct_itimerspec.h
  /usr/include/bits/types/struct_sched_param.h
  /usr/include/bits/types/struct_sigstack.h
- /usr/include/bits/types/struct_statx.h
- /usr/include/bits/types/struct_statx_timestamp.h
  /usr/include/bits/types/struct_timespec.h
  /usr/include/bits/types/struct_timeval.h
  /usr/include/bits/types/struct_tm.h
@@ -241,7 +224,6 @@ CMakeFiles/TourBox_Linux_Driver.dir/main.cpp.o
  /usr/include/c++/13/ostream
  /usr/include/c++/13/pstl/pstl_config.h
  /usr/include/c++/13/stdexcept
- /usr/include/c++/13/stdlib.h
  /usr/include/c++/13/streambuf
  /usr/include/c++/13/string
  /usr/include/c++/13/string_view
@@ -276,7 +258,6 @@ CMakeFiles/TourBox_Linux_Driver.dir/main.cpp.o
  /usr/include/linux/input.h
  /usr/include/linux/ioctl.h
  /usr/include/linux/posix_types.h
- /usr/include/linux/stat.h
  /usr/include/linux/stddef.h
  /usr/include/linux/types.h
  /usr/include/linux/uinput.h
@@ -294,7 +275,6 @@ CMakeFiles/TourBox_Linux_Driver.dir/main.cpp.o
  /usr/include/sys/ioctl.h
  /usr/include/sys/select.h
  /usr/include/sys/single_threaded.h
- /usr/include/sys/stat.h
  /usr/include/sys/time.h
  /usr/include/sys/ttydefaults.h
  /usr/include/sys/types.h
