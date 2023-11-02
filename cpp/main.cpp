@@ -114,22 +114,22 @@ int main(int argc, char *argv[])
     tim.tv_sec = 0;          // 0 seconds, plus
     tim.tv_nsec = 25000000L; // 25 milliseconds
     
-    KeyType key;
+    int key;
     ssize_t bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1);
     while(0 <= bytesRead)   /* If there's a error accessing the buffer we dip out gracefuly...*/
     {
       bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1); /* get some data */
       if(0 < bytesRead) /* make sure they pressed a button (or nano sleep below) */
       {
-        key = (KeyType )readBuffer[0];  /* use our KeyType to make it easier to read */
-        if (KeyType::PINKIE == key      
-         || KeyType::RING == key        // We are
-         || KeyType::SIDE == key        // looking for    // looking for
-         || KeyType::TOP == key){       // double clicks.
+        key = readBuffer[0];  /* use our KeyType to make it easier to read */
+        if (PINKIE == key      
+         || RING == key        // We are
+         || SIDE == key        // looking for    // looking for
+         || TOP == key){       // double clicks.
             nanosleep(&tim, &tim2);     // Give them about 25ms to double click
             bytesRead = read(serialPortFileDescriptor, readBuffer.begin(),1);
             if(0 != bytesRead)                
-              key = (KeyType )readBuffer[0]; // Double click returns a different code from device.
+              key = readBuffer[0]; // Double click returns a different code from device.
           }                                  // Only four of the buttons have this feature.
           generateKeyPressEvent(gUinputFileDescriptor, key);
       }                           // ..slow..down...
