@@ -41,7 +41,8 @@ void sigint_handler(sig_atomic_t s)
 
 int main(int argc, char *argv[])
 {
-    /* === For libconfuse to handle config files === */
+  std::unordered_map<int, keyfig> keyf = initKeyConfig();
+  /* === For libconfuse to handle config files === */
     /* Localize messages & types according to environment, since v2.9 */
 #ifdef LC_MESSAGES 
     setlocale(LC_MESSAGES, "");
@@ -62,11 +63,14 @@ int main(int argc, char *argv[])
 
     const char *filename = (char *)"tourbox.conf";
     cfg_t *cfg = parse_conf(filename);
+
     if(!cfg)
     {
         std::cerr << "Failed to open config file: " << filename <<  std::endl;
         exit(1);
     }
+
+    std::cout << "Nintendo A: " << cfg_getstr(cfg, "NINTENDO_A") << std::endl << std::endl; 
     // Figure out how to poll for device later...
     std::string ss = "/dev/tty";
     if (argc > 1 && 4 >= strlen(argv[1]))   /* Allow one to change device if necessary */
@@ -131,7 +135,7 @@ int main(int argc, char *argv[])
             if(0 != bytesRead)                
               key = readBuffer[0]; // Double click returns a different code from device.
           }                                  // Only four of the buttons have this feature.
-          generateKeyPressEvent(gUinputFileDescriptor, key);
+          generateKeyPressEvent(gUinputFileDescriptor, key, cfg, keyf);
       }                           // ..slow..down...
       else                        //...........the.. 
         nanosleep(&tim, &tim2);   // ............read..  

@@ -20,15 +20,19 @@
  *
 */
 
+#include <array>
+#include <charconv>
 #include <fcntl.h>
 #include <linux/input-event-codes.h>
 #include <linux/uinput.h>
 #include <string.h>
+#include <string>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <string>
-#include <map>
+#include <string.h>
+#include <unordered_map>
 #include <confuse.h>
+#include <utility>
 
 
 #define	DBL_TOP     0x13
@@ -54,68 +58,97 @@
 #define	DPAD_LEFT   0x92
 #define	DPAD_RIGHT  0x93
 
-#define	DIAL_PRESS            0x38
-#define	DIAL_COUNTERCLOCKWISE 0x4f
-#define	DIAL_CLOCKWISE        0x8f  // Large flat disc 
+#define	DIAL_PRESS   0x38
+#define	DIAL_COUNTER 0x4f
+#define	DIAL_CLOCK   0x8f  // Large flat disc 
 
-#define	KNOB_PRESS            0x37
-#define	KNOB_CLOCKWISE        0x44  // Central knob 
-#define	KNOB_COUNTERCLOCKWISE 0x84
-
-// === Default buttons for the device === 
-static std::map<int, int> keyMap = {      // Grouped primarily for readibility 
-  std::make_pair(NINTENDO_B, BTN_LEFT),   // These two are      
-	std::make_pair(NINTENDO_A, BTN_RIGHT),  // Mouse buttons.     
-	
-	std::make_pair(SIDE, KEY_CALC),	        // Calculator should pop up
-	std::make_pair(TOP, KEY_REFRESH),	      // Refresh your browser
-	std::make_pair(PINKIE, KEY_FORWARD),	  // Browse forwared ->  
-	std::make_pair(RING, KEY_BACK),	        // <- Browse back     
-	std::make_pair(MOON, KEY_MUTE),         // Mute your speakers
-
-	
-  std::make_pair(WHEEL_UP, REL_WHEEL),    // Scroll wheel acts like
-	std::make_pair(WHEEL_DOWN, REL_WHEEL),  // mouse wheel. Press jumps
-	std::make_pair(WHEEL_PRESS, KEY_HOME),  // to beginning of document.
-	
-	std::make_pair(DPAD_UP, KEY_UP),        // Just arrow keys 
-	std::make_pair(DPAD_DOWN, KEY_DOWN),    // in case you wanna  
-	std::make_pair(DPAD_LEFT, KEY_LEFT),    // bounce around a
-	std::make_pair(DPAD_RIGHT, KEY_RIGHT),  // spreadsheet.
-
-
-	std::make_pair(DIAL_CLOCKWISE, KEY_BRIGHTNESSUP),             // Quick brightness 
-	std::make_pair(DIAL_COUNTERCLOCKWISE, KEY_BRIGHTNESSDOWN),    // settings for the  
-	std::make_pair(DIAL_PRESS, KEY_MICMUTE), // <- for gamers     // discrerning hacker.
-	
-	std::make_pair(KNOB_CLOCKWISE, KEY_VOLUMEUP),           // Weird bug, the KEY_VOLUMEUP
-	std::make_pair(KNOB_COUNTERCLOCKWISE, KEY_VOLUMEDOWN),  // may let you go up well past  
-	std::make_pair(KNOB_PRESS, KEY_PLAYPAUSE),              // 100%.... like 1,000% 
-	
-	std::make_pair(DBL_RING, KEY_CAMERA),               // These may depend on your
-	std::make_pair(DBL_PINKIE, KEY_ALL_APPLICATIONS),   // computer's complement of 
-  std::make_pair(DBL_SIDE, KEY_SLEEP),                // hardware doo-dads and 
-	std::make_pair(DBL_TOP, KEY_SCREENLOCK)             // accessories.
+#define	KNOB_PRESS   0x37
+#define	KNOB_CLOCK   0x44  // Central knob 
+#define	KNOB_COUNTER 0x84
+    
+struct keyfig {
+  bool flag;
+  short rela;
+  int tkey;
+  int kcod;
+  std::string dact;
+  std::string exes;
 };
+
+std::array<keyfig, 24> keyf = 
+  {{{ false,  1,  NINTENDO_B,   KEY_CAMERA_ACCESS_DISABLE, "KEY_CAMERA_ACCESS_DISABLE", "0" },
+    { false,  1,  NINTENDO_A,   KEY_CAMERA_ACCESS_ENABLE,  "KEY_CAMERA_ACCESS_ENABLE",  "0" },
+    { false,  1,  SIDE,         KEY_CALC,                  "KEY_CALC",                  "0" },
+    { false,  1,  TOP,          KEY_REFRESH,               "KEY_REFRESH",               "0" },
+    { false,  1,  PINKIE,       KEY_FORWARD,               "KEY_FORWARD",               "0" },
+    { false,  1,  RING,         KEY_BACK,                  "KEY_BACK",                  "0" },
+    { false,  1,  MOON,         KEY_MUTE,                  "KEY_MUTE",                  "0" },
+    { false,  1,  WHEEL_UP,     BTN_WHEEL,                 "BTN_WHEEL",                 "0" },
+    { false,  1,  WHEEL_DOWN,   BTN_WHEEL,                 "BTN_WHEEL",                 "0" },
+    { false,  1,  WHEEL_PRESS,  KEY_HOME,                  "KEY_HOME",                  "0" },
+    { false,  1,  DPAD_UP,      KEY_UP,                    "KEY_UP",                    "0" },
+    { false,  1,  DPAD_DOWN,    KEY_DOWN,                  "KEY_DOWN",                  "0" },
+    { false,  1,  DPAD_LEFT,    KEY_LEFT,                  "KEY_LEFT",                  "0" },
+    { false,  1,  DPAD_RIGHT,   KEY_RIGHT,                 "KEY_RIGHT",                 "0" },   
+    { false,  1,  DIAL_CLOCK,   KEY_BRIGHTNESSUP,          "KEY_BRIGHTNESSUP",          "0" },
+    { false,  1,  DIAL_COUNTER, KEY_BRIGHTNESSDOWN,        "KEY_BRIGHTNESSDOWN",        "0" },
+    { false,  1,  DIAL_PRESS,   KEY_MICMUTE,               "KEY_MICMUTE",               "0" },
+    { false,  1,  KNOB_CLOCK,   KEY_VOLUMEUP,              "KEY_VOLUMEUP",              "0" },
+    { false,  1,  KNOB_COUNTER, KEY_VOLUMEDOWN,            "KEY_VOLUMEDOWN",            "0" },
+    { false,  1,  KNOB_PRESS,   KEY_PLAYPAUSE,             "KEY_PLAYPAUSE",             "0" },
+    { false,  1,  DBL_RING,     KEY_CAMERA,                "KEY_CAMERA",                "0" },
+    { false,  1,  DBL_PINKIE,   KEY_ALL_APPLICATIONS,      "KEY_ALL_APPLICATIONS",      "0" },
+    { false,  1,  DBL_SIDE,     KEY_SLEEP,                 "KEY_SLEEP",                 "0" },
+    { false,  1,  DBL_TOP,      KEY_SCREENLOCK,            "KEY_SCREENLOCK",            "0" }}};
+
 
 
 cfg_t *parse_conf(const char *filename)
 {
-  cfg_opt_t opts[] = {
-	CFG_STR("NINTENDO_A", "BTN_LEFT", CFGF_NONE),
-	CFG_BOOL("more testing...", cfg_true, CFGF_NONE),
-	CFG_INT("to test....", 1, CFGF_NONE),
-	CFG_END()
+  cfg_opt_t opts[] {
+    CFG_STR("NINTENDO_B", "KEY_CAMERA_ACCESS_DISABLE", CFGF_NONE),    //       
+	  CFG_STR("NINTENDO_A", "KEY_CAMERA_ACCESS_ENABLE", CFGF_NONE),  // Mouse buttons     
+	
+	  CFG_STR("SIDE", "KEY_CALC", CFGF_NONE),	        // Calculator should pop up
+	  CFG_STR("TOP", "KEY_REFRESH", CFGF_NONE),	      // Refresh your browser
+	  CFG_STR("PINKIE", "KEY_FORWARD", CFGF_NONE),	  // Browse forwared ->  -
+	  CFG_STR("RING", "KEY_BACK", CFGF_NONE),	        // <- Browse back     
+	  CFG_STR("MOON", "KEY_FORWARD", CFGF_NONE),         // Mute your speakers
+
+
+    CFG_STR("WHEEL_UP", "REL_WHEEL", CFGF_NONE),    // Scroll wheel acts like
+	  CFG_STR("WHEEL_DOWN", "REL_WHEEL", CFGF_NONE),  // mouse wheel. Press jumps
+	  CFG_STR("WHEEL_PRESS", "KEY_HOME", CFGF_NONE),  // to beginning of document.
+	
+	  CFG_STR("DPAD_UP", "KEY_UP", CFGF_NONE),        // Just arrow keys 
+	  CFG_STR("DPAD_DOWN", "KEY_DOWN", CFGF_NONE),    // in case you wanna  
+	  CFG_STR("DPAD_LEFT", "KEY_LEFT", CFGF_NONE),    // bounce around a
+	  CFG_STR("DPAD_RIGHT", "KEY_RIGHT", CFGF_NONE),  // spreadsheet.
+
+	  CFG_STR("DIAL_CLOCK", "KEY_BRIGHTNESSUP", CFGF_NONE),             // Quick brightness 
+	  CFG_STR("DIAL_COUNTER", "KEY_BRIGHTNESSDOWN", CFGF_NONE),    // settings for the  
+	  CFG_STR("DIAL_PRESS", "KEY_MICMUTE", CFGF_NONE), // <- for gamers     // discrerning hacker.s
+	
+	  CFG_STR("KNOB_CLOCK", "KEY_VOLUMEUP", CFGF_NONE),           // Weird bug, the KEY_VOLUMEUP
+	  CFG_STR("KNOB_COUNTER", "KEY_VOLUMEDOWN", CFGF_NONE),  // may let you go up well past  
+  	CFG_STR("KNOB_PRESS", "KEY_PLAYPAUSE", CFGF_NONE),              // 100%.... like 1,000% 
+	
+	  CFG_STR("DBL_RING", "KEY_CAMERA", CFGF_NONE),               // These may depend on your
+	  CFG_STR("DBL_PINKIE", "KEY_ALL_APPLICATIONS", CFGF_NONE),   // computer's complement of 
+    CFG_STR("DBL_SIDE", "KEY_SLEEP", CFGF_NONE),                // hardware doo-dads and 
+	  CFG_STR("DBL_TOP", "KEY_SCREENLOCK", CFGF_NONE),
+    CFG_END()
   };
- 
   cfg_t *cfg = cfg_init(opts, CFGF_NONE);
+
   switch (cfg_parse(cfg, filename)) {
-	case CFG_FILE_ERROR:
-	    printf("warning: configuration file '%s' could not be read: %s\n", filename, strerror(errno));
+	  case CFG_FILE_ERROR:
+	    printf("warning: configuration file '%s' could not be found: %s\n", filename, strerror(errno));
 	    return 0;
-	case CFG_PARSE_ERROR:
+	  case CFG_PARSE_ERROR:
+	    printf("warning: configuration file '%s' read error:  %s\n", filename, strerror(errno));
 	    return 0;
-	case CFG_SUCCESS:
+    case CFG_SUCCESS:
 	    break;
   }
   return cfg;
@@ -135,9 +168,11 @@ void emit(const int &fd, const int &type, const int &code, const int &val)
     write(fd, &ie, sizeof(ie));
 }
 
-void generateKeyPressEvent(const int &fd, const int &key)
+void generateKeyPressEvent(const int &fd, const int &key, cfg_t *cfg, std::unordered_map<int, keyfig> &keyf)
 {    
- 
+  char *kstring = cfg_getstr(cfg, keyString[key].c_str());
+  if((keyf.second.find(kstring) != keyf.end()) && keyf.second.find(kstring)->second.fmod) {
+  std::cout << kstring << "\t" << sizeof(keyf) << std::endl ;
     if (WHEEL_DOWN == key)                // The mouse wheel has special 
       emit(fd, EV_REL, REL_WHEEL, -1);  // relative properties which 
     else if (WHEEL_UP == key)             // we implement here. 
@@ -148,36 +183,44 @@ void generateKeyPressEvent(const int &fd, const int &key)
       emit(fd, EV_KEY, keyMap[key], 0);
     }
     emit(fd, EV_SYN, SYN_REPORT, 0);     // Let's the kernel know you're done.
+  }
 }
+
+
+
+
 
 int setupUinput(void)
 {
-    struct uinput_setup usetup;
-
-    int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
-
-    ioctl(fd, UI_SET_EVBIT, EV_KEY);     // Regular buttons
-	  for (const auto& keyType : keyMap)               // Keyboard 
-	    ioctl(fd, UI_SET_KEYBIT, keyType.second); // Mouse 
-    ioctl(fd, UI_SET_KEYBIT, BTN_LEFT);  // /Clicky*
-    ioctl(fd, UI_SET_KEYBIT, BTN_RIGHT); // /Clicky* !!
-    
-    ioctl(fd, UI_SET_EVBIT, EV_REL);      // Relative buttons
-    ioctl(fd, UI_SET_RELBIT, REL_WHEEL);  // Vertical Wheel
-    ioctl(fd, UI_SET_RELBIT, REL_HWHEEL); // Horizontal Wheel
-
     usleep(1000);
+    int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
+    if(fd){
+      ioctl(fd, UI_SET_EVBIT, EV_KEY);     // Regular buttons
+	    for (const auto& keyType : keyMap)               // Keyboard 
+	     ioctl(fd, UI_SET_KEYBIT, keyType.second); // Mouse 
+      ioctl(fd, UI_SET_KEYBIT, BTN_LEFT);  // /Clicky*
+      ioctl(fd, UI_SET_KEYBIT, BTN_RIGHT); // /Clicky* !!
+    
+      ioctl(fd, UI_SET_EVBIT, EV_REL);      // Relative buttons
+      ioctl(fd, UI_SET_RELBIT, REL_WHEEL);  // Vertical Wheel
+      ioctl(fd, UI_SET_RELBIT, REL_HWHEEL); // Horizontal Wheel
 
-    memset(&usetup, 0, sizeof(usetup));
-    usetup.id.bustype = BUS_USB;
-    usetup.id.vendor = 0x2e3c; // Per 'lsusb -v' 
+      usleep(1000);
 
-    usetup.id.product = 0x5740; // Might be different for you... 
-    strcpy(usetup.name, "Tourbox Neo Virtual Device Userland Driver (Keyboard/Mouse)");
+      struct uinput_setup usetup;
+      memset(&usetup, 0, sizeof(usetup));
+      usetup.id.bustype = BUS_USB;
+      usetup.id.vendor = 0x2e3c; // Per 'lsusb -v' 
 
-    ioctl(fd, UI_DEV_SETUP, &usetup);
-    ioctl(fd, UI_DEV_CREATE);
+      usetup.id.product = 0x5740; // Might be different for you... 
+      strcpy(usetup.name, "Tourbox Neo Virtual Device Userland Driver (Keyboard/Mouse)");
 
+      ioctl(fd, UI_DEV_SETUP, &usetup);
+      ioctl(fd, UI_DEV_CREATE);
+    }
+    else {
+      fprintf(stderr, "Unable to open /dev/uinput: %i\n\n", fd);
+    }
     return fd;
 }
 
