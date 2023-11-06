@@ -19,6 +19,15 @@
  * @copyright Copyright (c) 2022
  *
 */
+#define DEBUG
+
+#ifdef DEBUG
+ #define D(x) x
+#else 
+ #define D(x)
+#endif
+
+
 
 #include <array>
 #include <asm-generic/ioctl.h>
@@ -68,6 +77,10 @@
 #define	KNOB_CLOCK   0x44  // Central knob 
 #define	KNOB_COUNTER 0x84
     
+using namespace std;
+
+static cfg_t *cfg;
+
 struct keyfigure {
   bool flag;
   short rel;
@@ -77,7 +90,7 @@ struct keyfigure {
   std::string exec;
 };
 
-static std::array<keyfigure, 24> keyfig = 
+static array<keyfigure, 24> keyfig = 
   {{{ false,  1,  NINTENDO_B,   KEY_CAMERA_ACCESS_DISABLE, "KEY_CAMERA_ACCESS_DISABLE", "0" },
     { false,  1,  NINTENDO_A,   KEY_CAMERA_ACCESS_ENABLE,  "KEY_CAMERA_ACCESS_ENABLE",  "0" },
     { false,  1,  SIDE,         KEY_CALC,                  "KEY_CALC",                  "0" },
@@ -104,67 +117,63 @@ static std::array<keyfigure, 24> keyfig =
     { false,  1,  DBL_TOP,      KEY_SCREENLOCK,            "KEY_SCREENLOCK",            "0" }}};
 
 
-
-cfg_t *parse_conf(const char *filename) 
+std::string parse_conf(const char *filename) 
 {
+  D(std::cout << "filename: " << filename << "\n\n";)
+
   cfg_opt_t key_opts[] {
     CFG_BOOL("fmod", cfg_false, CFGT_NONE),
     CFG_INT("rel", 1, CFGT_NONE),
-    CFG_INT("tkey", 0, CFGT_NONE),
-    CFG_INT("kcode", 0, CFGT_NONE),
-    CFG_STR("default", 0, CFGT_NONE),
-    CFG_STR("exec", 0, CFGT_NONE)
-    };
-
-  cfg_opt_t opts[] {
-    CFG_SEC("NINTENDO_B", key_opts, CFGF_MULTI | CFGF_TITLE),    //       
-	  CFG_SEC("NINTENDO_A", key_opts, CFGF_MULTI | CFGF_TITLE), 
-
-	
-	  CFG_SEC("SIDE", key_opts, CFGF_MULTI | CFGF_TITLE ),	        // Calculator should pop up
-	  CFG_SEC("TOP",  key_opts, CFGF_MULTI | CFGF_TITLE),	      // Refresh your browser
-	  CFG_SEC("PINKIE", key_opts, CFGF_MULTI | CFGF_TITLE),	  // Browse forwared ->  -
-	  CFG_SEC("RING", key_opts, CFGF_MULTI | CFGF_TITLE),	        // <- Browse back     
-	  CFG_SEC("MOON", key_opts, CFGF_MULTI | CFGF_TITLE),         // Mute your speakers
-
-
-    CFG_SEC("WHEEL_UP", key_opts, CFGF_MULTI | CFGF_TITLE),    // Scroll wheel acts like
-	  CFG_SEC("WHEEL_DOWN", key_opts, CFGF_MULTI | CFGF_TITLE),  // mouse wheel. Press jumps
-	  CFG_SEC("WHEEL_PRESS", key_opts, CFGF_MULTI | CFGF_TITLE),  // to beginning of document.
-	
-	  CFG_SEC("DPAD_UP", key_opts, CFGF_MULTI | CFGF_TITLE),        // Just arrow keys 
-	  CFG_SEC("DPAD_DOWN", key_opts, CFGF_MULTI | CFGF_TITLE),    // in case you wanna  
-	  CFG_SEC("DPAD_LEFT", key_opts, CFGF_MULTI | CFGF_TITLE),    // bounce around a
-	  CFG_SEC("DPAD_RIGHT", key_opts, CFGF_MULTI | CFGF_TITLE),  // spreadsheet.
-
-	  CFG_SEC("DIAL_CLOCK", key_opts, CFGF_MULTI | CFGF_TITLE),             // Quick brightness 
-	  CFG_SEC("DIAL_COUNTER", key_opts, CFGF_MULTI | CFGF_TITLE),    // settings for the  
-	  CFG_SEC("DIAL_PRESS", key_opts, CFGF_MULTI | CFGF_TITLE), // <- for gamers     // discrerning hacker.s
-	
-	  CFG_SEC("KNOB_CLOCK", key_opts, CFGF_MULTI | CFGF_TITLE),           // Weird bug, the KEY_VOLUMEUP
-	  CFG_SEC("KNOB_COUNTE", key_opts, CFGF_MULTI | CFGF_TITLE),  // may let you go up well past  
-  	CFG_SEC("KNOB_PRESS", key_opts, CFGF_MULTI | CFGF_TITLE),              // 100%.... like 1,000% 
-	
-	  CFG_SEC("DBL_RING", key_opts, CFGF_MULTI | CFGF_TITLE),               // These may depend on your
-	  CFG_SEC("DBL_PINKIE", key_opts, CFGF_MULTI | CFGF_TITLE),   // computer's complement of 
-    CFG_SEC("DBL_SIDE", key_opts, CFGF_MULTI | CFGF_TITLE),                // hardware doo-dads and 
-	  CFG_SEC("DBL_TOP", key_opts, CFGF_MULTI | CFGF_TITLE),
+    CFG_STR("exec", 0, CFGT_NONE),
     CFG_END()
   };
 
-  cfg_t *cfg = cfg_init(opts, CFGF_NONE);
+D(std::cout << "key_opts created\n\nNow opts...\n\n";)
 
+  cfg_opt_t opts[] {
+    CFG_STR("tty", "ACM1", CFGF_NONE),
+    CFG_SEC("NINTENDO_A", key_opts, CFGF_NONE),
+    CFG_SEC("NINTENDO_B", key_opts, CFGF_NONE),
+    CFG_SEC("SIDE", key_opts, CFGF_NONE),
+    CFG_SEC("TOP", key_opts, CFGF_NONE),
+    CFG_SEC("PINKIE", key_opts, CFGF_NONE),
+    CFG_SEC("RING", key_opts, CFGF_NONE),
+    CFG_SEC("MOON", key_opts, CFGF_NONE),
+    CFG_SEC("WHEEL_UP", key_opts, CFGF_NONE),
+    CFG_SEC("WHEEL_DOWN", key_opts, CFGF_NONE),
+    CFG_SEC("WHEEL_PRESS", key_opts, CFGF_NONE),
+    CFG_SEC("DPAD_UP", key_opts, CFGF_NONE),
+    CFG_SEC("DPAD_DOWN", key_opts, CFGF_NONE),
+    CFG_SEC("DPAD_LEFT", key_opts, CFGF_NONE),
+    CFG_SEC("DPAD_RIGHT", key_opts, CFGF_NONE),
+    CFG_SEC("DIAL_CLOCKWISE", key_opts, CFGF_NONE),
+    CFG_SEC("DIAL_COUNTERCLOCKWISE", key_opts, CFGF_NONE),
+    CFG_SEC("DIAL_PRESS", key_opts, CFGF_NONE),
+    CFG_SEC("KNOB_CLOCKWISE", key_opts, CFGF_NONE),
+    CFG_SEC("KNOB_COUNTERCLOCKWISE", key_opts, CFGF_NONE),
+    CFG_SEC("KNOB_PRESS", key_opts, CFGF_NONE),
+    CFG_SEC("DBL_RING", key_opts, CFGF_NONE),
+    CFG_SEC("DBL_PINKIE", key_opts, CFGF_NONE),
+    CFG_SEC("DBL_SIDE", key_opts, CFGF_NONE),
+    CFG_SEC("DBL_TOP", key_opts, CFGF_NONE), 
+    CFG_END()
+  };
+
+  D(std::cout << "opts created.\n\ncfg_init:...";)
+
+  cfg = cfg_init(opts, CFGF_NONE);
+  D(std::cout << "success.\n\ncfg_parse:";)
   switch (cfg_parse(cfg, filename)) {
 	  case CFG_FILE_ERROR:
 	    printf("warning: configuration file '%s' could not be found: %s\n", filename, strerror(errno));
-	    return 0;
+	    return "0";
 	  case CFG_PARSE_ERROR:
 	    printf("warning: configuration file '%s' read error:  %s\n", filename, strerror(errno));
-	    return 0;
+	    return "0";
     case CFG_SUCCESS:
 	    break;
   }
-  return cfg;
+  return cfg_getstr(cfg, "tty");
 }
 
 void emit(const int &fd, const int &type, const int &code, const int &val)
@@ -183,10 +192,13 @@ void emit(const int &fd, const int &type, const int &code, const int &val)
 
 void generateKeyPressEvent(const int &fd, cfg_t *cfg, int key)
 {    
+  D(std::cout << sizeof(key));
   keyfigure kstring = keyfig[1];
-  std::cout << cfg_getstr(cfg, "NINTENDO_A") << "\t" << key << std::endl;
+  cfg_t *sub = cfg_getnsec(cfg, "NINTENDO_A", 0);
+  
+  D(std::cout << cfg_getstr(sub, "exec") << "\t" << key << std::endl;)
 
-  std::cout << kstring.dact << "\t" << sizeof(kstring) << std::endl ;
+  D(std::cout << kstring.dact << "\t" << sizeof(kstring) << std::endl;)
     if (WHEEL_DOWN == kstring.tkey)                // The mouse wheel has special re
       emit(fd, EV_REL, REL_WHEEL, -1);  // relative properties which 
     else if (WHEEL_UP == kstring.tkey)             // we implement here. 
@@ -199,17 +211,14 @@ void generateKeyPressEvent(const int &fd, cfg_t *cfg, int key)
     emit(fd, EV_SYN, SYN_REPORT, 0);     // Let's the kernel know you're done.
 }
 
-
-
-
-
 int setupUinput(void)
 {
     usleep(1000);
     int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
     if(fd){
-      ioctl(fd, UI_SET_EVBIT, EV_KEY);     // Regular buttons
-	    //for (const auto& keyType : keyMap)               // Keyboard 
+      ioctl(fd, UI_SET_EVBIT, EV_REP);     // Regular buttons
+	    for (int i = 0 ; i < 24 ; i++)
+        ioctl(fd, UI_SET_KEYBIT, keyfig[i].kcode); // Keyboard 
 	    // ioctl(fd, UI_SET_KEYBIT, keyType.second); // Mouse 
       ioctl(fd, UI_SET_KEYBIT, BTN_LEFT);  // /Clicky*
       ioctl(fd, UI_SET_KEYBIT, BTN_RIGHT); // /Clicky* !!

@@ -39,7 +39,7 @@ void sigint_handler(sig_atomic_t s)
 }
 
 
-int main(int argc, char *argv[])
+int main(/* int argc, char *argv[]*/ )
 {
   /* === For libconfuse to handle config files === */
     /* Localize messages & types according to environment, since v2.9 */
@@ -61,21 +61,9 @@ int main(int argc, char *argv[])
     // return Fl::run();
 
     const char *filename = (char *)"tourbox.conf";
-    cfg_t *cfg = parse_conf(filename);
-
-    if(!cfg)
-    {
-        std::cerr << "Failed to open config file: " << filename <<  std::endl;
-        exit(1);
-    }
-
-    std::cout << "Nintendo A: " << cfg_getstr(cfg, "NINTENDO_A") << std::endl << std::endl; 
-    // Figure out how to poll for device later...
     std::string ss = "/dev/tty";
-    if (argc > 1 && 4 >= strlen(argv[1]))   /* Allow one to change device if necessary */
-      ss.append(argv[1],0,strlen(argv[1])); /* But we don't want huge arbitrary amounts of data. */
-    else                                    /* Will have other options in the future. */
-      ss.append("ACM0");  /* USB0 is another potential option, for example */
+    ss.append(parse_conf(filename));
+    printf("tourbox.conf parsed\n\n");
 
     // Setup and open a serial port 
     const int serialPortFileDescriptor = open(ss.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
