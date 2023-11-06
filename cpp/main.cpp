@@ -41,7 +41,6 @@ void sigint_handler(sig_atomic_t s)
 
 int main(int argc, char *argv[])
 {
-  std::unordered_map<int, keyfig> keyf = initKeyConfig();
   /* === For libconfuse to handle config files === */
     /* Localize messages & types according to environment, since v2.9 */
 #ifdef LC_MESSAGES 
@@ -135,7 +134,7 @@ int main(int argc, char *argv[])
             if(0 != bytesRead)                
               key = readBuffer[0]; // Double click returns a different code from device.
           }                                  // Only four of the buttons have this feature.
-          generateKeyPressEvent(gUinputFileDescriptor, key, cfg, keyf);
+          generateKeyPressEvent(gUinputFileDescriptor, cfg, key);
       }                           // ..slow..down...
       else                        //...........the.. 
         nanosleep(&tim, &tim2);   // ............read..  
