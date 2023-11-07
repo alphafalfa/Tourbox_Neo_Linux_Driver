@@ -19,6 +19,7 @@
  * @copyright Copyright (c) 2022
  *
 */
+#include <sys/select.h>
 #define DEBUG
 
 #ifdef DEBUG
@@ -84,56 +85,54 @@ static cfg_t *cfg;
 struct keyfigure {
   bool flag;
   short rel;
-  int tkey;
+  int tcode;
+  std::string tstr;
   int kcode;
-  std::string dact;
+  std::string kstr;
   std::string exec;
 };
 
 static array<keyfigure, 24> keyfig = 
-  {{{ false,  1,  NINTENDO_B,   KEY_CAMERA_ACCESS_DISABLE, "KEY_CAMERA_ACCESS_DISABLE", "0" },
-    { false,  1,  NINTENDO_A,   KEY_CAMERA_ACCESS_ENABLE,  "KEY_CAMERA_ACCESS_ENABLE",  "0" },
-    { false,  1,  SIDE,         KEY_CALC,                  "KEY_CALC",                  "0" },
-    { false,  1,  TOP,          KEY_REFRESH,               "KEY_REFRESH",               "0" },
-    { false,  1,  PINKIE,       KEY_FORWARD,               "KEY_FORWARD",               "0" },
-    { false,  1,  RING,         KEY_BACK,                  "KEY_BACK",                  "0" },
-    { false,  1,  MOON,         KEY_MUTE,                  "KEY_MUTE",                  "0" },
-    { false,  1,  WHEEL_UP,     BTN_WHEEL,                 "BTN_WHEEL",                 "0" },
-    { false,  1,  WHEEL_DOWN,   BTN_WHEEL,                 "BTN_WHEEL",                 "0" },
-    { false,  1,  WHEEL_PRESS,  KEY_HOME,                  "KEY_HOME",                  "0" },
-    { false,  1,  DPAD_UP,      KEY_UP,                    "KEY_UP",                    "0" },
-    { false,  1,  DPAD_DOWN,    KEY_DOWN,                  "KEY_DOWN",                  "0" },
-    { false,  1,  DPAD_LEFT,    KEY_LEFT,                  "KEY_LEFT",                  "0" },
-    { false,  1,  DPAD_RIGHT,   KEY_RIGHT,                 "KEY_RIGHT",                 "0" },   
-    { false,  1,  DIAL_CLOCK,   KEY_BRIGHTNESSUP,          "KEY_BRIGHTNESSUP",          "0" },
-    { false,  1,  DIAL_COUNTER, KEY_BRIGHTNESSDOWN,        "KEY_BRIGHTNESSDOWN",        "0" },
-    { false,  1,  DIAL_PRESS,   KEY_MICMUTE,               "KEY_MICMUTE",               "0" },
-    { false,  1,  KNOB_CLOCK,   KEY_VOLUMEUP,              "KEY_VOLUMEUP",              "0" },
-    { false,  1,  KNOB_COUNTER, KEY_VOLUMEDOWN,            "KEY_VOLUMEDOWN",            "0" },
-    { false,  1,  KNOB_PRESS,   KEY_PLAYPAUSE,             "KEY_PLAYPAUSE",             "0" },
-    { false,  1,  DBL_RING,     KEY_CAMERA,                "KEY_CAMERA",                "0" },
-    { false,  1,  DBL_PINKIE,   KEY_ALL_APPLICATIONS,      "KEY_ALL_APPLICATIONS",      "0" },
-    { false,  1,  DBL_SIDE,     KEY_SLEEP,                 "KEY_SLEEP",                 "0" },
-    { false,  1,  DBL_TOP,      KEY_SCREENLOCK,            "KEY_SCREENLOCK",            "0" }}};
+{{{ false,  1,  NINTENDO_B,      "NINTENDO_B",      KEY_CAMERA_ACCESS_DISABLE, "KEY_CAMERA_ACCESS_DISABLE", "0" },
+  { false,  1,  NINTENDO_A,      "NINTENDO_A",      KEY_CAMERA_ACCESS_ENABLE,  "KEY_CAMERA_ACCESS_ENABLE",  "0" },
+  { false,  1,  SIDE,            "SIDE",            KEY_CALC,                  "KEY_CALC",                  "0" },
+  { false,  1,  TOP,             "TOP",             KEY_REFRESH,               "KEY_REFRESH",               "0" },
+  { false,  1,  PINKIE,          "PINKIE",          KEY_FORWARD,               "KEY_FORWARD",               "0" },
+  { false,  1,  RING,            "RING",            KEY_BACK,                  "KEY_BACK",                  "0" },
+  { false,  1,  MOON,            "MOON",            KEY_FORWARD,               "KEY_FORWARD",               "0" },
+  { false,  1,  WHEEL_UP,        "WHEEL_UP",        REL_WHEEL,                 "REL_WHEEL",                 "0" },
+  { false,  1,  WHEEL_DOWN,      "WHEEL_DOWN",      REL_WHEEL,                 "REL_WHEEL",                 "0" },
+  { false,  1,  WHEEL_PRESS,     "WHEEL_PRESS",     KEY_HOME,                  "KEY_HOME",                  "0" },
+  { false,  1,  DPAD_UP,         "DPAD_UP",         KEY_UP,                    "KEY_UP",                    "0" },
+  { false,  1,  DPAD_DOWN,       "DPAD_DOWN",       KEY_DOWN,                  "KEY_DOWN",                  "0" },
+  { false,  1,  DPAD_LEFT,       "DPAD_LEFT",       KEY_LEFT,                  "KEY_LEFT",                  "0" },
+  { false,  1,  DPAD_RIGHT,      "DPAD_RIGHT",      KEY_RIGHT,                 "KEY_RIGHT",                 "0" },
+  { false,  1,  DIAL_CLOCK,      "DIAL_CLOCK",      KEY_BRIGHTNESSUP,          "KEY_BRIGHTNESSUP",          "0" },
+  { false,  1,  DIAL_COUNTER,    "DIAL_COUNTER",    KEY_BRIGHTNESSDOWN,        "KEY_BRIGHTNESSDOWN",        "0" },
+  { false,  1,  DIAL_PRESS,      "DIAL_PRESS",      KEY_MICMUTE,               "KEY_MICMUTE",               "0" },
+  { false,  1,  KNOB_CLOCK,      "KNOB_CLOCK",      KEY_VOLUMEUP,              "KEY_VOLUMEUP",              "0" },
+  { false,  1,  KNOB_COUNTER,    "KNOB_COUNTER",    KEY_VOLUMEDOWN,            "KEY_VOLUMEDOWN",            "0" },
+  { false,  1,  KNOB_PRESS,      "KNOB_PRESS",      KEY_PLAYPAUSE,             "KEY_PLAYPAUSE",             "0" },
+  { false,  1,  DBL_RING,        "DBL_RING",        KEY_CAMERA,                "KEY_CAMERA",                "0" },
+  { false,  1,  DBL_PINKIE,      "DBL_PINKIE",      KEY_ALL_APPLICATIONS,      "KEY_ALL_APPLICATIONS",      "0" },
+  { false,  1,  DBL_SIDE,        "DBL_SIDE",        KEY_SLEEP,                 "KEY_SLEEP",                 "0" },
+  { false,  1,  DBL_TOP,         "DBL_TOP",         KEY_SCREENLOCK,            "KEY_SCREENLOCK",            "0" }}};
 
 
 std::string parse_conf(const char *filename) 
 {
-  D(std::cout << "filename: " << filename << "\n\n";)
+  D(printf("filename: %s\n", (char *)filename);)
 
-  cfg_opt_t key_opts[] {
-    CFG_BOOL("fmod", cfg_false, CFGT_NONE),
+  cfg_opt_t key[] = {
+    CFG_BOOL("flag", cfg_false, CFGT_NONE),
     CFG_INT("rel", 1, CFGT_NONE),
     CFG_STR("exec", 0, CFGT_NONE),
     CFG_END()
   };
 
-D(std::cout << "key_opts created\n\nNow opts...\n\n";)
-
-  cfg_opt_t opts[] {
-    CFG_STR("tty", "ACM1", CFGF_NONE),
-    CFG_SEC("NINTENDO_A", key_opts, CFGF_NONE),
+/*  cfg_opt_t keys[] = {
     CFG_SEC("NINTENDO_B", key_opts, CFGF_NONE),
+    CFG_SEC("NINTENDO_A", key_opts, CFGF_NONE),
     CFG_SEC("SIDE", key_opts, CFGF_NONE),
     CFG_SEC("TOP", key_opts, CFGF_NONE),
     CFG_SEC("PINKIE", key_opts, CFGF_NONE),
@@ -146,11 +145,11 @@ D(std::cout << "key_opts created\n\nNow opts...\n\n";)
     CFG_SEC("DPAD_DOWN", key_opts, CFGF_NONE),
     CFG_SEC("DPAD_LEFT", key_opts, CFGF_NONE),
     CFG_SEC("DPAD_RIGHT", key_opts, CFGF_NONE),
-    CFG_SEC("DIAL_CLOCKWISE", key_opts, CFGF_NONE),
-    CFG_SEC("DIAL_COUNTERCLOCKWISE", key_opts, CFGF_NONE),
+    CFG_SEC("DIAL_CLOCK", key_opts, CFGF_NONE),
+    CFG_SEC("DIAL_COUNTER", key_opts, CFGF_NONE),
     CFG_SEC("DIAL_PRESS", key_opts, CFGF_NONE),
-    CFG_SEC("KNOB_CLOCKWISE", key_opts, CFGF_NONE),
-    CFG_SEC("KNOB_COUNTERCLOCKWISE", key_opts, CFGF_NONE),
+    CFG_SEC("KNOB_CLOCK", key_opts, CFGF_NONE),
+    CFG_SEC("KNOB_COUNTER", key_opts, CFGF_NONE),
     CFG_SEC("KNOB_PRESS", key_opts, CFGF_NONE),
     CFG_SEC("DBL_RING", key_opts, CFGF_NONE),
     CFG_SEC("DBL_PINKIE", key_opts, CFGF_NONE),
@@ -158,11 +157,18 @@ D(std::cout << "key_opts created\n\nNow opts...\n\n";)
     CFG_SEC("DBL_TOP", key_opts, CFGF_NONE), 
     CFG_END()
   };
+*/
+  cfg_opt_t opts[] = {
+    CFG_FLOAT("VERSION", 0.0, CFGF_NONE),
+    CFG_STR("tty", "ACM1", CFGF_NONE),
+    CFG_SEC("key", key, CFGF_MULTI | CFGF_TITLE),
+    CFG_END()
+  };
 
-  D(std::cout << "opts created.\n\ncfg_init:...";)
+  D(printf("opts created.\ncfg_init:...");)
 
-  cfg = cfg_init(opts, CFGF_NONE);
-  D(std::cout << "success.\n\ncfg_parse:";)
+  cfg_t* cfg = cfg_init(opts, CFGF_NONE);
+  D(printf("cfg_getfloat cfg, \"VERSION\"\nsuccess.\ncfg_parse:");)
   switch (cfg_parse(cfg, filename)) {
 	  case CFG_FILE_ERROR:
 	    printf("warning: configuration file '%s' could not be found: %s\n", filename, strerror(errno));
@@ -173,8 +179,44 @@ D(std::cout << "key_opts created\n\nNow opts...\n\n";)
     case CFG_SUCCESS:
 	    break;
   }
+  unsigned int i;
+  cfg_t *sec;
+ /* Iterate over the sections and print fields from each section. */
+	for (i = 0; i < cfg_size(cfg, "key"); i++) {
+		sec = cfg_getnsec(cfg, "key", i);
+
+			printf("group title:  '%s'\n", cfg_title(sec));
+			printf("group number:  %i\n", (int )cfg_getbool(sec, "flag"));
+			printf("group total:   %i\n", (int )cfg_getint(sec, "rel"));
+			printf("\n");
+	}
+
+  D(printf("cfg_getfloat cfg, \"VERSION\": %f\n...success.\n\ncfg_parse: ", cfg_getfloat(cfg, "VERSION"));)
+
+  unsigned int j = 0;
+  std::string keystr, titstr;
+  for (i = 0; i < cfg_size(cfg,"key"); i++) {
+    sec = cfg_getnsec(cfg, "key", i);
+    if(cfg_getbool(sec, "flag")){
+      while(keyfig[j].tstr != cfg_title(sec)){
+        keystr = keyfig[j].tstr;
+        titstr = cfg_title(sec);
+        printf("j: %i\tkeyfig: %s\ttitle: %s", j, keystr.c_str(), titstr.c_str());
+        j++;
+      }
+
+      std::string keystr = keyfig[j].tstr;
+      std::string titstr = cfg_title(sec);
+    	printf("j: %i\tkeyfig: %s\ttitle: %s", j, keystr.c_str(), titstr.c_str());	
+      keyfig[j].flag = true;
+      keyfig[j].rel = cfg_getint(sec, "rel");
+      keyfig[j].exec = cfg_getstr(sec, "exec");
+    }
+  }
+
   return cfg_getstr(cfg, "tty");
 }
+
 
 void emit(const int &fd, const int &type, const int &code, const int &val)
 {
@@ -190,20 +232,20 @@ void emit(const int &fd, const int &type, const int &code, const int &val)
     write(fd, &ie, sizeof(ie));
 }
 
-void generateKeyPressEvent(const int &fd, cfg_t *cfg, int key)
+void generateKeyPressEvent(const int &fd, int key)
 {    
-  D(std::cout << sizeof(key));
+
   keyfigure kstring = keyfig[1];
   cfg_t *sub = cfg_getnsec(cfg, "NINTENDO_A", 0);
-  
-  D(std::cout << cfg_getstr(sub, "exec") << "\t" << key << std::endl;)
 
-  D(std::cout << kstring.dact << "\t" << sizeof(kstring) << std::endl;)
-    if (WHEEL_DOWN == kstring.tkey)                // The mouse wheel has special re
+  D(printf("\ngenerateKeyPressEvent #221\t%i\n", key);)
+  D(printf("cfg_getstr(sub, \"exec\")\t key: %s\n", cfg_getstr(sub, "exec"));)
+  D(printf("kstring.kstr \t%s\t%lu\n", kstring.kstr.c_str(), sizeof(kstring));)
+  if (WHEEL_DOWN == kstring.tcode)                // The mouse wheel has special re
       emit(fd, EV_REL, REL_WHEEL, -1);  // relative properties which 
-    else if (WHEEL_UP == kstring.tkey)             // we implement here. 
+  else if (WHEEL_UP == kstring.tcode)             // we implement here. 
       emit(fd, EV_REL, REL_WHEEL, +1);  // (+ show for clarity)
-    else{
+  else{
       emit(fd, EV_KEY, kstring.kcode, 1); // Otherwise it's simple binary -
       emit(fd, EV_SYN, SYN_REPORT, 0);   // Button down and button up.
       emit(fd, EV_KEY, kstring.kcode, 0);
@@ -217,8 +259,10 @@ int setupUinput(void)
     int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
     if(fd){
       ioctl(fd, UI_SET_EVBIT, EV_REP);     // Regular buttons
-	    for (int i = 0 ; i < 24 ; i++)
+	    for (int i = 0 ; i < 24 ; i++){
+ //      D(printf("keyfig[%i].kode: %i\n",i,keyfig[i].kcode);) 
         ioctl(fd, UI_SET_KEYBIT, keyfig[i].kcode); // Keyboard 
+      }
 	    // ioctl(fd, UI_SET_KEYBIT, keyType.second); // Mouse 
       ioctl(fd, UI_SET_KEYBIT, BTN_LEFT);  // /Clicky*
       ioctl(fd, UI_SET_KEYBIT, BTN_RIGHT); // /Clicky* !!
@@ -241,7 +285,7 @@ int setupUinput(void)
       ioctl(fd, UI_DEV_CREATE);
     }
     else {
-      fprintf(stderr, "Unable to open /dev/uinput: %i\n\n", fd);
+      fprintf(stderr, "Unable to open /dev/uinput: %i\n", fd);
     }
     return fd;
 }
